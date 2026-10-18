@@ -1,11 +1,12 @@
+from __future__ import annotations
 from icecream import ic
 from collections.abc import Sequence
-from random import seed, randint, choices
+from random import seed, randint, choices, shuffle
 
 CHILDREN_AMT = 10
 CHARACTERISTICS_AMT = 5
 REFERENCE_CHILD = 0
-PLAYGROUND = []
+PLAYGROUND = {}
 seed(42)
 
 class Child:
@@ -21,7 +22,7 @@ class Child:
         return f"{self._id}: {self.characteristics}"
         pass
     
-    def difference(self, other_child) -> int:
+    def difference(self, other_child: Child) -> int:
         return sum(s != o for s, o in zip(self.characteristics, other_child.characteristics))
         pass
 
@@ -29,14 +30,8 @@ class Child:
 class Solution:
     circle: dict
 
-    def __init__(self, children: Sequence[int]):
+    def __init__(self, children: Sequence[Child]):
         self.circle = {}
-
-        # This is to keep an orientation and avoid having solutions that are the same, but just reversed
-        ref_child = children.index((PLAYGROUND[REFERENCE_CHILD] + 1) % CHILDREN_AMT) # see comments below
-        if 
-
-
         for idx in range(CHILDREN_AMT):
             cur_child = children[idx]._id
             left_child = children[idx - 1]._id # if idx == 0, then it takes the last element (children[-1])
@@ -44,12 +39,64 @@ class Solution:
             
             self.circle[cur_child] = {left_child, right_child}
 
-    pass
+        pass
+
+    def __str__(self):
+        return "\n".join(f"{child}: {adj}" for child, adj in self.circle.items())
+        pass
+
+    @classmethod
+    def from_idstring(cls, idstring: Sequence[int]):
+        childseq = []
+        for _id in idstring:
+            childseq.append(PLAYGROUND[_id])
+        return cls(childseq)
+
+    def __eq__(self, other: Solution) -> bool:
+        for idx in range(CHILDREN_AMT):
+            if self.circle[idx] != other.circle[idx]:
+                return False
+        return True
+
+        pass
+
+    def disentagle(self) -> list[int]:
+        disentagled = [None] * CHILDREN_AMT
+        cur_child = 0
+
+        disentagled[cur_child] = cur_child
+        adj1, adj2 = self.circle[cur_child]
+        disentagled[cur_child - 1] = adj1
+        disentagled[cur_child + 1] = adj2
+        
+        prev_child = cur_child
+        cur_child = adj2
+
+        idx = 2
+
+        counter = 3
+        while (counter < CHILDREN_AMT):
+            adj, = self.circle[cur_child] - {prev_child}
+            disentagled[idx] = adj
+
+            idx += 1
+            prev_child = cur_child
+            cur_child = adj
+            counter += 1
+
+        return disentagled
+        pass
+
+    def fitness(self) -> int:
+
+        pass
+
 
 
 for idx in range(CHILDREN_AMT):
-    PLAYGROUND.append(Child(idx, choices([True, False], k = CHARACTERISTICS_AMT)))
+    PLAYGROUND[idx] = Child(idx, choices([True, False], k = CHARACTERISTICS_AMT))
 
-sol = Solution(PLAYGROUND)
+sol = Solution.from_idstring(PLAYGROUND)
 
-ic(sol.circle)
+print(sol)
+print(sol.disentagle())
