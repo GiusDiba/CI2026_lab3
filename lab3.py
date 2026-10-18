@@ -29,6 +29,7 @@ class Child:
 # solution as a dictionary of adjacences: each key is a child id and each value is a set containing adjacent children.
 class Solution:
     circle: dict
+    fitness: int
 
     def __init__(self, children: Sequence[Child]):
         self.circle = {}
@@ -38,6 +39,8 @@ class Solution:
             right_child = children[(idx + 1) % CHILDREN_AMT]._id # this way it takes the first element if idx == CHILDREN_AMT - 1 (this idea came from ChatGPT)
             
             self.circle[cur_child] = {left_child, right_child}
+        
+        self.fitness = self.calculateFitness()
 
         pass
 
@@ -87,8 +90,28 @@ class Solution:
         return disentagled
         pass
 
-    def fitness(self) -> int:
+    def calculateFitness(self) -> int:
+        fit = 0
+        cur_child = 0
 
+        adj1, adj2 = self.circle[cur_child]
+        fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj1])
+        fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj2])
+
+        prev_child = cur_child
+        cur_child = adj2
+
+        counter = 3
+
+        while counter < CHILDREN_AMT:
+            adj, = self.circle[cur_child] - {prev_child}
+            fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj])
+
+            prev_child = cur_child
+            cur_child = adj
+            counter += 1
+
+        return fit
         pass
 
 
@@ -100,3 +123,7 @@ sol = Solution.from_idstring(PLAYGROUND)
 
 print(sol)
 print(sol.disentagle())
+print(sol.fitness)
+
+for c in PLAYGROUND:
+    print(PLAYGROUND[c])
