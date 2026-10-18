@@ -1,7 +1,6 @@
 from __future__ import annotations
-from icecream import ic
 from collections.abc import Sequence
-from random import seed, randint, choices, shuffle
+from random import seed, sample, choices, shuffle
 
 CHILDREN_AMT = 10
 CHARACTERISTICS_AMT = 5
@@ -114,16 +113,13 @@ class Solution:
         return fit
         pass
 
+    def mutate(self) -> Solution:
+        new_idstring = self.disentagle()
+        idx1, idx2 = sample(range(CHILDREN_AMT), 2)
+
+        new_idstring[idx1], new_idstring[idx2] = new_idstring[idx2], new_idstring[idx1]
+
+        return Solution.from_idstring(new_idstring)
+        pass
 
 
-for idx in range(CHILDREN_AMT):
-    PLAYGROUND[idx] = Child(idx, choices([True, False], k = CHARACTERISTICS_AMT))
-
-sol = Solution.from_idstring(PLAYGROUND)
-
-print(sol)
-print(sol.disentagle())
-print(sol.fitness)
-
-for c in PLAYGROUND:
-    print(PLAYGROUND[c])
