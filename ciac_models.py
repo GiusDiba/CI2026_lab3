@@ -2,10 +2,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from random import seed, sample, choices, shuffle
 
-CHILDREN_AMT = 10
-CHARACTERISTICS_AMT = 5
+CHILDREN_AMT = 500
+CHARACTERISTICS_AMT = 10
 REFERENCE_CHILD = 0
-MU = 20
+MU = 10
 LBDA = 3 * MU
 MAX_AGE = 2
 TAU = 4
@@ -147,8 +147,11 @@ class Solution:
 
     def stringify(self) -> str:
         st = ""
-        for _id in self.id_string:
-            st += f"{_id}"
+        if CHILDREN_AMT > 20:
+            st = "too long..."
+        else:
+            for _id in self.id_string:
+                st += f"{_id}"
         return st + f" | fitness {self.fitness}"
 
         pass
@@ -219,13 +222,13 @@ class Population:
 
         pass
 
-    def advanceGeneration(self, parentSelectionMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False):
+    def advanceGeneration(self, parentSelectionMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False):
         mating_pool = parentSelectionMethod(self.solutions)
         offspring = offspringSelectionMethod(mating_pool)
 
         best_fitness = max(self.solutions).fitness
         for sol in self.solutions:
-            if eliteNotAging and sol.fitness != best_fitness:
+            if eliteNotAging and sol.fitness == best_fitness:
                 continue
             else:
                 sol.age += 1
@@ -236,6 +239,7 @@ class Population:
         self.generation += 1
         self.best_solution = max(self.solutions)
 
-        print(f"generation {self.generation}, best solution {self.best_solution.stringify()}")
+        if verbose:
+            print(f"generation {self.generation}, best solution {self.best_solution.stringify()}")
 
         pass
