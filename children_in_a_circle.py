@@ -1,19 +1,17 @@
 from ciac_models import *
+from random import shuffle
 
+# Playground initialization
 for idx in range(CHILDREN_AMT):
     PLAYGROUND[idx] = Child(idx, choices([True, False], k = CHARACTERISTICS_AMT))
 
-sol = Solution.from_idstring(PLAYGROUND)
+# Initial random population
+population = Population()
 
-print(sol)
-print(sol.disentagle())
-print(sol.fitness)
+best_solution = population.best_solution
+for _ in range(100):
+    population.advanceGeneration(Population.parentTournamentSelection, Population.getOffspringByMutation, Population.survivorSelectionByAging)
+    if population.best_solution > best_solution:
+        best_solution = population.best_solution
 
-for c in PLAYGROUND:
-    print(PLAYGROUND[c])
-
-sol2 = sol.mutate()
-
-print(sol2)
-print(sol2.disentagle())
-print(sol2.fitness)
+print(f"--- END ---\nBest solution: \n{best_solution.stringify()}")
