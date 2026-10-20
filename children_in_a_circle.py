@@ -11,15 +11,45 @@ population = Population()
 best_solution = population.best_solution
 
 
-MAX_NO_IMPROVEMENT = 50
-no_improvement_counter = 0
+MAX_NO_IMPROVEMENT = max(CHILDREN_AMT // CHARACTERISTICS_AMT, 50)
+MAX_EXPLORE_STAGE = 3
+explore_counter = 0
 
-while no_improvement_counter < MAX_NO_IMPROVEMENT:
-    population.advanceGeneration(Population.parentTournamentSelection, Population.getOffspringByMutation, Population.survivorSelectionByAging, eliteNotAging = True, verbose = True)
-    if population.best_solution > best_solution:
-        best_solution = population.best_solution
-        no_improvement_counter = 0
-    else:
-        no_improvement_counter += 1
+while explore_counter < MAX_EXPLORE_STAGE:
+    no_improvement_counter = 0
 
-print(f"--- END ---\nBest solution: \n{best_solution.stringify()}")
+    print("--- EXPLORING ---")
+    while no_improvement_counter < MAX_NO_IMPROVEMENT / 2:
+        population.advanceGeneration(
+            Population.parentTournamentSelection,
+            Population.getOffspringByBigMutation,
+            Population.offspringSelectionByFitness,
+            Population.survivorSelectionByAging,
+            eliteNotAging = True,
+            verbose = True)
+
+        if population.best_solution > best_solution:
+            best_solution = population.best_solution
+            no_improvement_counter = 0
+        else:
+            no_improvement_counter += 1
+    explore_counter += 1
+
+    no_improvement_counter = 0
+    print("--- EXPLOITING ---")
+    while no_improvement_counter < MAX_NO_IMPROVEMENT:
+        population.advanceGeneration(
+            Population.parentTournamentSelection,
+            Population.getOffspringByCloseMutation, 
+            Population.offspringSelectionByFitness,
+            Population.survivorSelectionByAging,
+            eliteNotAging = True,
+            verbose = True)
+
+        if population.best_solution > best_solution:
+            best_solution = population.best_solution
+            no_improvement_counter = 0
+        else:
+            no_improvement_counter += 1
+
+print(f"--- END ---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")

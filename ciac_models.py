@@ -1,10 +1,10 @@
 from __future__ import annotations
 from collections.abc import Sequence
-from random import seed, sample, choices, shuffle
+from random import seed, sample, choices, shuffle, randint
 
 CHILDREN_AMT = 500
 CHARACTERISTICS_AMT = 10
-REFERENCE_CHILD = 0
+MAX_DIFFERENCES = CHARACTERISTICS_AMT * CHILDREN_AMT
 MU = 10
 LBDA = 3 * MU
 MAX_AGE = 2
@@ -133,15 +133,24 @@ class Solution:
             prev_child = cur_child
             cur_child = adj
 
-        return fit / (CHARACTERISTICS_AMT * CHILDREN_AMT)
+        return fit / MAX_DIFFERENCES
         pass
 
-    def mutate(self) -> Solution:
+    def mutateSwapRandom(self) -> Solution:
         new_idstring = self.id_string.copy()
         idx1, idx2 = sample(range(CHILDREN_AMT), 2)
 
         new_idstring[idx1], new_idstring[idx2] = new_idstring[idx2], new_idstring[idx1]
 
+        return Solution(new_idstring)
+        pass
+
+    def mutateSwapNext(self) -> Solution:
+        new_idstring = self.id_string.copy()
+        idx1 = randint(0, CHILDREN_AMT - 1)
+        idx2 = (idx1 + 1) % CHILDREN_AMT
+
+        new_idstring[idx1], new_idstring[idx2] = new_idstring[idx2], new_idstring[idx1]
         return Solution(new_idstring)
         pass
 
@@ -194,18 +203,27 @@ class Population:
         pass
 
 
-    def getOffspringByMutation(parents: list[Solution]) -> set[Solution]:
+    def getOffspringByCloseMutation(parents: list[Solution]) -> set[Solution]:
         offspring = set()
         for sol in parents:
-            offspring.add(sol.mutate())
+            offspring.add(sol.mutateSwapNext())
+        
+        return offspring
+
+        pass
+
+    def getOffspringByBigMutation(parents: list[Solution]) -> set[Solution]:
+        offspring = set()
+        for sol in parents:
+            offspring.add(sol.mutateSwapRandom())
         
         return offspring
 
         pass
 
     def offspringSelectionByFitness(offspring: set[Solution], amount: int) -> list[Solution]:
-        offspring.sort(key = fitness)
-        selected = list(offspring)
+        #offspring.sort(key = fitness)
+        selected = sorted(offspring, reverse = True)
 
         return selected[:amount]
 
@@ -222,9 +240,10 @@ class Population:
 
         pass
 
-    def advanceGeneration(self, parentSelectionMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False):
+    def advanceGeneration(self, parentSelectionMethod, offspringGenerationMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False, offspring_amt: int = MU):
         mating_pool = parentSelectionMethod(self.solutions)
-        offspring = offspringSelectionMethod(mating_pool)
+        offspring = offspringGenerationMethod(mating_pool)
+        offspring = offspringSelectionMethod(offspring, offspring_amt)
 
         best_fitness = max(self.solutions).fitness
         for sol in self.solutions:
@@ -241,5 +260,13 @@ class Population:
 
         if verbose:
             print(f"generation {self.generation}, best solution {self.best_solution.stringify()}")
+
+        pass
+
+    def calculateTakeoverTime(self, parentSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False):
+        #backup_sol = self.solutions.copy()
+        #backup_best = self.best_solution.copy()
+
+        #self.advanceGeneration()
 
         pass
