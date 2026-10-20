@@ -1,16 +1,17 @@
 from __future__ import annotations
 from collections.abc import Sequence
-from random import seed, sample, choices, shuffle, randint
+from random import seed, sample, choices, shuffle, randint, choice
 
-CHILDREN_AMT = 10
-CHARACTERISTICS_AMT = 5
+CHILDREN_AMT = 500
+CHARACTERISTICS_AMT = 10
 MAX_DIFFERENCES = CHARACTERISTICS_AMT * CHILDREN_AMT
 MU = 10
 LBDA = 3 * MU
 MAX_AGE = 2
-TAU = 4
+TAU = max(CHILDREN_AMT // 100, 4)
 
 PLAYGROUND = {}
+ALL_CHILDREN = set(range(CHILDREN_AMT))
 seed(42)
 
 class Child:
@@ -152,6 +153,42 @@ class Solution:
         return Solution(new_idstring)
         pass
 
+    # Given two idstrings, i take one child at random from the first parent and one of its adjacent ones. Then, i repeat the process with the new
+    # child, but considering the adjacences of the other parent.
+    # This way, half of the offspring's adjacences come from the first parent, and the other half from the other one.
+    # This recombinations can also introduce a random mutation in case all adjacent children have already been added
+    def binaryRecombination(self, other: Solution) -> Solution:
+        inserted = set()
+
+        new_idstring = []
+        count = 1
+        adj = randint(0, CHILDREN_AMT - 1)
+        new_idstring.append(adj)
+        inserted.add(adj)
+        while count < CHILDREN_AMT:
+            if count % 2 == 0:
+                parent = self.circle
+                fallback_parent = other.circle
+            else:
+                parent = other.circle
+                fallback_parent = self.circle
+
+            pool = parent[adj] - inserted
+            if not pool:
+                pool = fallback_parent[adj] - inserted
+                if not pool:
+                    pool = ALL_CHILDREN - inserted
+
+            
+            adj = choice(tuple(pool))
+            new_idstring.append(adj)
+            inserted.add(adj)
+            count += 1
+
+        return Solution(new_idstring)
+
+        pass
+
     def stringify(self) -> str:
         st = ""
         if CHILDREN_AMT > 20:
@@ -188,6 +225,8 @@ class Population:
 
         pass
 
+    # --- Parent selection methods ---
+
     # Tournament selection
     def parentTournamentSelection(population: list[Solution]) -> list[Solution]:
         mating_pool = []
@@ -200,6 +239,7 @@ class Population:
 
         pass
 
+    # --- Genetic operators ---
 
     def getOffspringByCloseMutation(parents: list[Solution]) -> set[Solution]:
         offspring = set()
@@ -226,9 +266,45 @@ class Population:
         return offspring
         
         pass
+    
+    # If the mating pool is uneven, the remaining parent "mates with himself" (close mutation)
+    def getSingleChildrenByBinaryRecombination(parents: list[Solution]) -> set[Solution]:
+        offspring = set()
+
+        if LBDA % 2 != 0:
+            lone_parent = parents.pop()
+            offspring.add(lone_parent.mutateSwapNext())
+        
+        for idx in range(LBDA - 1):
+            next_idx = idx + 1
+            offspring.add(parents[idx].binaryRecombination(parents[next_idx]))
+            idx = next_idx
+
+        return offspring
+
+        pass
+
+    def getMultipleChildrenByBinaryRecombination(parents: list[Solution], siblings_amt: int = 2):
+        offspring = set()
+
+        if LBDA % 2 != 0:
+            lone_parent = parents.pop()
+            offspring.add(lone_parent.mutateSwapNext())
+        
+        for idx in range(LBDA - 1):
+            next_idx = idx + 1
+            #print(f"Mating {idx} and {next_idx}")
+            for _ in range(siblings_amt):
+                offspring.add(parents[idx].binaryRecombination(parents[next_idx]))
+            idx = next_idx
+
+        return offspring
+
+        pass
+
+    # --- Offspring selection methods ---
 
     def offspringSelectionByFitness(offspring: set[Solution], amount: int) -> list[Solution]:
-        #offspring.sort(key = fitness)
         selected = sorted(offspring, reverse = True)
 
         return selected[:amount]
@@ -240,15 +316,19 @@ class Population:
 
         pass
 
+    # --- Survivor selection methods ---
+
     def survivorSelectionByAging(survivors: list[Solution]) -> list[Solution]:
         population = [sol for sol in survivors if sol.age < MAX_AGE]
         return population
 
         pass
 
-    def advanceGeneration(self, parentSelectionMethod, offspringGenerationMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False, offspring_amt: int = MU):
+    ### ### ###
+    
+    def advanceGeneration(self, parentSelectionMethod, geneticOperator, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False, offspring_amt: int = MU):
         mating_pool = parentSelectionMethod(self.solutions)
-        offspring = offspringGenerationMethod(mating_pool)
+        offspring = geneticOperator(mating_pool)
         offspring = offspringSelectionMethod(offspring, offspring_amt)
 
         best_fitness = max(self.solutions).fitness
@@ -265,7 +345,7 @@ class Population:
         self.best_solution = max(self.solutions)
 
         if verbose:
-            print(f"generation {self.generation}, best solution {self.best_solution.stringify()}, solution amt {len(self.solutions)}, max_age {max([s.age for s in self.solutions])}")
+            print(f"generation {self.generation}, best solution {self.best_solution.stringify()}, solution amt {len(self.solutions)}")
 
         pass
 
@@ -280,8 +360,7 @@ class Population:
             for sol in self.solutions:
                 if sol.fitness == backup_best.fitness:
                     best_count += 1
-            #print(f"gen: {self.generation} | sol_amt: {len(self.solutions)}")
-
+                
         takeover_time = self.generation
 
         self.solutions = backup_sol
