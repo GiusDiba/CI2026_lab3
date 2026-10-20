@@ -1,4 +1,5 @@
 from ciac_models import *
+from random import random
 
 def takeoverTimeEvaluation(population: Population):
         # --- Takeover Time evaluation ---
@@ -179,4 +180,105 @@ def bigmut_multirec(population: Population,  max_mut: int, max_rec: int, max_ite
 
     print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
 
+    pass
+
+# genetic operators are equiprobable and randomly chosen
+# elite aging is also chosen at random
+def naive_hypermodern(population: Population, max_no_improvement: int, verbose: bool = False):
+    best_solution = max(population.solutions)
+    print(f"Starting best: {best_solution.stringify()}")
+
+    iter_counter = 0
+    genetic_operators = [
+        Population.getOffspringByBigMutation,
+        Population.getOffspringByCloseMutation,
+        #Population.getOffspringByCopy,
+        Population.getSingleChildrenByBinaryRecombination,
+        Population.getMultipleChildrenByBinaryRecombination]
+
+    while iter_counter < max_no_improvement:
+        chosen_operator = choice(genetic_operators)
+        population.advanceGeneration(
+            Population.parentTournamentSelection,
+            chosen_operator,
+            Population.offspringSelectionByFitness,
+            Population.survivorSelectionByAging,
+            eliteNotAging= choice((True, False)),
+            verbose= verbose)
+
+        if population.best_solution > best_solution:
+            best_solution = population.best_solution
+            iter_counter = 0
+        else:
+            iter_counter += 1
+    
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+        
+    pass
+
+# If during the last season there has been a majority of non-improvements, the probability of performing a mutation is increased.
+# The algorithm sops after max_no_improvement consecutive mutation ages
+# (I'm using "season" to refer to an arbitrary number of most recent generations)
+def multistage_hypermodern_fm(population: Population, season_length: int, max_no_improvement: int, verbose: bool = False):
+    best_solution = max(population.solutions)
+    print(f"Starting best: {best_solution.stringify()}")
+
+    mutation_ops = [
+        Population.getOffspringByCloseMutation,
+        Population.getOffspringByBigMutation
+    ]
+
+    recombination_ops = [
+        Population.getSingleChildrenByBinaryRecombination,
+        Population.getMultipleChildrenByBinaryRecombination
+    ]
+
+    no_improvement_counter = 0
+    no_improvement_generations = 0
+
+    while no_improvement_counter < max_no_improvement:
+        if no_improvement_counter > season_length:
+            no_improvement_counter = season_length
+        else:
+            no_improvement_counter = max(0, no_improvement_counter)
+
+        prob = no_improvement_counter / season_length
+
+        if random() < prob:
+            print("---\tMUTATING\t---")
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                choice(mutation_ops),
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= True,
+                verbose= verbose
+            )
+            if population.best_solution > best_solution:
+                no_improvement_generations = 0
+                no_improvement_counter -= 1
+                best_solution = population.best_solution
+            else:
+                no_improvement_generations += 1
+                no_improvement_counter += 1
+        else:
+            print("---\tRECOMBINING\t---")
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                choice(recombination_ops),
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= False,
+                verbose= verbose
+            )
+            if population.best_solution > best_solution:
+                no_improvement_counter -= 1
+                best_solution = population.best_solution
+            else:
+                no_improvement_counter += 1
+
+
+
+
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
     pass
