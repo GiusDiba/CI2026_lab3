@@ -10,7 +10,16 @@ population = Population()
 
 best_solution = population.best_solution
 
+# --- Takeover Time evaluation ---
+print (f"TAKEOVER TIME: {population.calculateTakeoverTime(
+    Population.parentTournamentSelection,
+    Population.offspringSelectionByFitness,
+    Population.survivorSelectionByAging,
+    eliteNotAging= False,
+    verbose= False
+)}")
 
+# --- Running the algorithm ---
 MAX_NO_IMPROVEMENT = max(CHILDREN_AMT // CHARACTERISTICS_AMT, 50)
 MAX_EXPLORE_STAGE = 3
 explore_counter = 0
@@ -26,7 +35,7 @@ while explore_counter < MAX_EXPLORE_STAGE:
             Population.offspringSelectionByFitness,
             Population.survivorSelectionByAging,
             eliteNotAging = True,
-            verbose = True)
+            verbose = False)
 
         if population.best_solution > best_solution:
             best_solution = population.best_solution
@@ -44,7 +53,7 @@ while explore_counter < MAX_EXPLORE_STAGE:
             Population.offspringSelectionByFitness,
             Population.survivorSelectionByAging,
             eliteNotAging = True,
-            verbose = True)
+            verbose = False)
 
         if population.best_solution > best_solution:
             best_solution = population.best_solution

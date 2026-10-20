@@ -2,8 +2,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from random import seed, sample, choices, shuffle, randint
 
-CHILDREN_AMT = 500
-CHARACTERISTICS_AMT = 10
+CHILDREN_AMT = 10
+CHARACTERISTICS_AMT = 5
 MAX_DIFFERENCES = CHARACTERISTICS_AMT * CHILDREN_AMT
 MU = 10
 LBDA = 3 * MU
@@ -118,7 +118,6 @@ class Solution:
         first_child = 0
 
         adj1, adj2 = self.circle[cur_child]
-        #print(f"\ncurrent: {cur_child} adjacent: {adj1},{adj2}")
         fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj1])
         fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj2])
 
@@ -127,7 +126,6 @@ class Solution:
 
         while cur_child != adj1:
             adj, = self.circle[cur_child] - {prev_child}
-            #print(f"evaluating {cur_child} and {adj}")
             fit += PLAYGROUND[cur_child].difference(PLAYGROUND[adj])
 
             prev_child = cur_child
@@ -221,6 +219,14 @@ class Population:
 
         pass
 
+    def getOffspringByCopy(parents: list[Solution]) -> set[Solution]:
+        offspring = set()
+        for sol in parents:
+            offspring.add(Solution(sol.id_string))
+        return offspring
+        
+        pass
+
     def offspringSelectionByFitness(offspring: set[Solution], amount: int) -> list[Solution]:
         #offspring.sort(key = fitness)
         selected = sorted(offspring, reverse = True)
@@ -235,7 +241,7 @@ class Population:
         pass
 
     def survivorSelectionByAging(survivors: list[Solution]) -> list[Solution]:
-        population = [sol for sol in survivors if sol.age != MAX_AGE]
+        population = [sol for sol in survivors if sol.age < MAX_AGE]
         return population
 
         pass
@@ -259,14 +265,28 @@ class Population:
         self.best_solution = max(self.solutions)
 
         if verbose:
-            print(f"generation {self.generation}, best solution {self.best_solution.stringify()}")
+            print(f"generation {self.generation}, best solution {self.best_solution.stringify()}, solution amt {len(self.solutions)}, max_age {max([s.age for s in self.solutions])}")
 
         pass
 
-    def calculateTakeoverTime(self, parentSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False):
-        #backup_sol = self.solutions.copy()
-        #backup_best = self.best_solution.copy()
+    def calculateTakeoverTime(self, parentSelectionMethod, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging: bool = False, verbose: bool = False) -> int:
+        backup_sol = self.solutions
+        backup_best = self.best_solution
+        best_count = 0
 
-        #self.advanceGeneration()
+        while best_count < len(self.solutions):
+            self.advanceGeneration(parentSelectionMethod, Population.getOffspringByCopy, offspringSelectionMethod, survivorSelectionMethod, eliteNotAging, verbose)
+            best_count = 0
+            for sol in self.solutions:
+                if sol.fitness == backup_best.fitness:
+                    best_count += 1
+            #print(f"gen: {self.generation} | sol_amt: {len(self.solutions)}")
 
+        takeover_time = self.generation
+
+        self.solutions = backup_sol
+        self.best_solution = backup_best
+
+        self.generation = 0
+        return takeover_time
         pass
