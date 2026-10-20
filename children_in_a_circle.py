@@ -7,4 +7,4 @@ for idx in range(CHILDREN_AMT):
 population = Population()
 REF_SOLUTIONS = population.solutions.copy()
 
-recombinationOnly(population, verbose= True, eliteNotAging= False)
+bigmut_multirec(population, 15, 5, 5, 20, True)

@@ -110,6 +110,73 @@ def recombinationOnly(population: Population, verbose: bool = False, eliteNotAgi
 
     print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
 
-# Stage1: EXPLORATION - perform big mutations on the current population, without elite aging
-# Stage2: EXPLOITATION - perform some multi-sibling recombination, with elite aging
-# WIP
+# Stage1: EXPLORATION - perform big mutations on the current population, with elite aging (population will decrease)
+# Stage2: EXPLOITATION - perform some multi-sibling recombination, without elite aging (population will increase)
+# Repeat stages 1 and 2 some times
+# Stage3: EXPLOITATION - perform small mutations with elite aging
+def bigmut_multirec(population: Population,  max_mut: int, max_rec: int, max_iterations:int, stage_3_iterations: int, verbose: bool = False):
+    best_solution = max(population.solutions)
+    print(f"Starting best: {best_solution.stringify()}")
+
+    iter_counter = 0
+    while iter_counter < max_iterations:
+        prev_iter_best = best_solution
+        inner_counter = 0
+        print(f"---\tSTAGE 1\t---")
+        while inner_counter < max_mut:
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                Population.getOffspringByBigMutation,
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= False,
+                verbose = verbose
+            )
+            if population.best_solution > best_solution:
+                best_solution = population.best_solution
+                inner_counter = 0
+            else:
+                inner_counter += 1
+        
+        inner_counter = 0
+        print(f"---\tSTAGE 2\t---")
+        while inner_counter < max_rec:
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                Population.getMultipleChildrenByBinaryRecombination,
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= False,
+                verbose= verbose
+            )
+            if population.best_solution > best_solution:
+                best_solution = population.best_solution
+                inner_counter = 0
+            else:
+                inner_counter += 1
+        
+        if best_solution > prev_iter_best:
+            iter_counter = 0
+        else:
+            iter_counter += 1
+
+    iter_counter = 0
+    print(f"---\tSTAGE 3\t---")
+    while iter_counter < stage_3_iterations:
+        population.advanceGeneration(
+                Population.parentTournamentSelection,
+                Population.getOffspringByCloseMutation,
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= False,
+                verbose= verbose
+            )
+        if population.best_solution > best_solution:
+            best_solution = population.best_solution
+            iter_counter = 0
+        else:
+            iter_counter += 1
+
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+
+    pass
