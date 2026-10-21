@@ -135,6 +135,8 @@ class Solution:
         return fit / MAX_DIFFERENCES
         pass
 
+    # --- Mutations ---
+
     def mutateSwapRandom(self) -> Solution:
         new_idstring = self.id_string.copy()
         idx1, idx2 = sample(range(CHILDREN_AMT), 2)
@@ -152,6 +154,21 @@ class Solution:
         new_idstring[idx1], new_idstring[idx2] = new_idstring[idx2], new_idstring[idx1]
         return Solution(new_idstring)
         pass
+
+    def inversionMutation(self) -> Solution:
+        new_idstring = self.id_string.copy()
+        idx1, idx2 = sample(range(CHILDREN_AMT), 2)
+        start = min(idx1, idx2)
+        end = max(idx1, idx2)
+
+        to_rev = new_idstring[start:end]
+        to_rev.reverse()
+        new_idstring = new_idstring[:start] + to_rev + new_idstring[end:]
+
+        return Solution(new_idstring)
+        pass
+
+    # --- Recombinations ---
 
     # Given two idstrings, i take one child at random from the first parent and one of its adjacent ones. Then, i repeat the process with the new
     # child, but considering the adjacences of the other parent.
