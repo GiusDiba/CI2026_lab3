@@ -2,8 +2,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from random import seed, sample, choices, shuffle, randint, choice
 
-CHILDREN_AMT = 500
-CHARACTERISTICS_AMT = 10
+CHILDREN_AMT = 10
+CHARACTERISTICS_AMT = 5
 MAX_DIFFERENCES = CHARACTERISTICS_AMT * CHILDREN_AMT
 MU = 10
 LBDA = 3 * MU
@@ -205,6 +205,35 @@ class Solution:
         return Solution(new_idstring)
 
         pass
+
+    def innerOverCrossover(self, other: Solution) -> Solution:
+        p1_gene_idx = randint(0, CHILDREN_AMT - 1)
+        p1_gene = self.id_string[p1_gene_idx]
+        p2_gene = choice(tuple(other.circle[p1_gene]))
+        p2_gene_idx = self.id_string.index(p2_gene)
+
+        start_idx = min(p1_gene_idx, p2_gene_idx)
+        end_idx = max(p1_gene_idx, p2_gene_idx)
+
+        new_idstring = self.id_string.copy()
+        print(f"Selected: {new_idstring[start_idx]}, {new_idstring[end_idx]}")
+
+        first_part = new_idstring[:start_idx + 1]
+        to_rev = new_idstring[start_idx + 1 : end_idx + 1 ]
+        to_rev.reverse()
+
+        if end_idx + 1 >= CHILDREN_AMT:
+            last_part = []
+        else:
+            last_part = new_idstring[end_idx + 1:]
+
+        new_idstring = first_part + to_rev + last_part
+        
+        return Solution(new_idstring)
+
+        pass
+
+
 
     def stringify(self) -> str:
         st = ""
