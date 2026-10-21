@@ -283,7 +283,7 @@ def multistage_hypermodern_fm(population: Population, season_length: int, max_no
     print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
     pass
 
-def multistage_hypermodern_fr(population: Population, season_length: int, max_no_improvement: int, decrease_step: int = 1, increase_step: int = 1, verbose: bool = False):
+def multistage_hypermodern_fr(population: Population, season_length: int, max_no_improvement: int, decrease_step: int = 1, increase_step: int = 1, verbose: bool = False) -> Solution:
     best_solution = max(population.solutions)
     print(f"Starting best: {best_solution.stringify()}")
 
@@ -345,4 +345,25 @@ def multistage_hypermodern_fr(population: Population, season_length: int, max_no
 
 
     print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+    return best_solution
+    pass
+
+
+# multistage_hypermodern_fr provides in the end a big population:
+# perform "mass extinction" and then repeat the process
+def mult_hypr_fr_ex(population: Population, pop_amt: int, max_for_extinction: int, season_length: int, max_no_improvement: int, decrease_step: int = 1, increase_step: int = 1):
+    best_solution = population.best_solution
+    no_improvement_counter = 0
+    while no_improvement_counter < max_for_extinction:
+        found = multistage_hypermodern_fr(population, season_length, max_no_improvement, decrease_step, increase_step, False)
+        if found > best_solution:
+            best_solution = found
+            no_improvement_counter = 0
+        else:
+            no_improvement_counter += 1
+
+        population.randomMassExtinction()
+
+    print(f"---\tEND (for real)\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+
     pass

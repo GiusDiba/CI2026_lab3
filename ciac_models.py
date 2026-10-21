@@ -369,3 +369,9 @@ class Population:
         self.generation = 0
         return takeover_time
         pass
+
+    def randomMassExtinction(self, new_population: int = MU):
+        self.solutions = sample(self.solutions, k = new_population)
+        self.generation += 1
+
+        pass
