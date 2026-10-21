@@ -219,7 +219,7 @@ def naive_hypermodern(population: Population, max_no_improvement: int, verbose: 
 # If during the last season there has been a majority of non-improvements, the probability of performing a mutation is increased.
 # The algorithm sops after max_no_improvement consecutive mutation ages
 # (I'm using "season" to refer to an arbitrary number of most recent generations)
-def multistage_hypermodern_fm(population: Population, season_length: int, max_no_improvement: int, verbose: bool = False):
+def multistage_hypermodern_fm(population: Population, season_length: int, max_no_improvement: int, decrease_step: int = 1, increase_step: int = 1, verbose: bool = False):
     best_solution = max(population.solutions)
     print(f"Starting best: {best_solution.stringify()}")
 
@@ -236,14 +236,14 @@ def multistage_hypermodern_fm(population: Population, season_length: int, max_no
     no_improvement_counter = 0
     no_improvement_generations = 0
 
-    while no_improvement_counter < max_no_improvement:
+    while no_improvement_generations < max_no_improvement:
         if no_improvement_counter > season_length:
             no_improvement_counter = season_length
         else:
             no_improvement_counter = max(0, no_improvement_counter)
 
         prob = no_improvement_counter / season_length
-
+        print(f"---\tPROB {prob}\t---")
         if random() < prob:
             print("---\tMUTATING\t---")
             population.advanceGeneration(
@@ -256,11 +256,11 @@ def multistage_hypermodern_fm(population: Population, season_length: int, max_no
             )
             if population.best_solution > best_solution:
                 no_improvement_generations = 0
-                no_improvement_counter -= 1
+                no_improvement_counter -= decrease_step
                 best_solution = population.best_solution
             else:
                 no_improvement_generations += 1
-                no_improvement_counter += 1
+                no_improvement_counter += increase_step
         else:
             print("---\tRECOMBINING\t---")
             population.advanceGeneration(
@@ -272,10 +272,74 @@ def multistage_hypermodern_fm(population: Population, season_length: int, max_no
                 verbose= verbose
             )
             if population.best_solution > best_solution:
-                no_improvement_counter -= 1
+                no_improvement_counter -= decrease_step
                 best_solution = population.best_solution
             else:
-                no_improvement_counter += 1
+                no_improvement_counter += increase_step
+
+
+
+
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+    pass
+
+def multistage_hypermodern_fr(population: Population, season_length: int, max_no_improvement: int, decrease_step: int = 1, increase_step: int = 1, verbose: bool = False):
+    best_solution = max(population.solutions)
+    print(f"Starting best: {best_solution.stringify()}")
+
+    mutation_ops = [
+        Population.getOffspringByCloseMutation,
+        Population.getOffspringByBigMutation
+    ]
+
+    recombination_ops = [
+        Population.getSingleChildrenByBinaryRecombination,
+        Population.getMultipleChildrenByBinaryRecombination
+    ]
+
+    no_improvement_counter = 0
+    no_improvement_generations = 0
+
+    while no_improvement_generations < max_no_improvement:
+        if no_improvement_counter > season_length:
+            no_improvement_counter = season_length
+        else:
+            no_improvement_counter = max(0, no_improvement_counter)
+
+        prob = no_improvement_counter / season_length
+        print(f"---\tPROB {prob}\t---")
+        if random() < prob:
+            print("---\tMUTATING\t---")
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                choice(recombination_ops),
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= True,
+                verbose= verbose
+            )
+            if population.best_solution > best_solution:
+                no_improvement_generations = 0
+                no_improvement_counter -= decrease_step
+                best_solution = population.best_solution
+            else:
+                no_improvement_generations += 1
+                no_improvement_counter += increase_step
+        else:
+            print("---\tRECOMBINING\t---")
+            population.advanceGeneration(
+                Population.parentTournamentSelection,
+                choice(mutation_ops),
+                Population.offspringSelectionByFitness,
+                Population.survivorSelectionByAging,
+                eliteNotAging= False,
+                verbose= verbose
+            )
+            if population.best_solution > best_solution:
+                no_improvement_counter -= decrease_step
+                best_solution = population.best_solution
+            else:
+                no_improvement_counter += increase_step
 
 
 
