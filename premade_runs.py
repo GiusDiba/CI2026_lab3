@@ -367,3 +367,83 @@ def mult_hypr_fr_ex(population: Population, pop_amt: int, max_for_extinction: in
     print(f"---\tEND (for real)\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
 
     pass
+
+# Mutate with probability mut_prob, recombinate with probability 1 - mut_prob
+# Inner probabilities always favor "exploitative" measures
+def hypr_mut_rec(population: Population, mut_prob: float, max_no_improvement: int):
+    best_solution = population.best_solution
+
+    mutation_operators = [
+        Population.getOffspringByBigMutation,
+        Population.getOffspringByCloseMutation,
+        Population.getOffspringByInversion 
+    ]
+
+    recombination_operators = [
+        Population.getSingleChildrenByBinaryRecombination,
+        Population.getMultipleChildrenByBinaryRecombination,
+        Population.getChildrenByInnerOverCrossover
+    ]
+    mut_weights = [0.1, 0.3, 0.7]
+    rec_weights = [0.1, 0.3, 0.7]
+
+    no_improvement_counter = 0
+    while no_improvement_counter < max_no_improvement:
+        
+        outer_prob = random()
+
+        if outer_prob < mut_prob:
+            idx = choices(range(3), weights = mut_weights)[0]
+            operator = mutation_operators[idx]
+            print(f"---\tMutating - {idx}\t---")
+        else:
+            idx = choices(range(3), weights = rec_weights)[0]
+            operator = recombination_operators[idx]
+            print(f"---\tRecombinating - {idx}\t---")
+
+        population.advanceGeneration(
+            Population.parentTournamentSelection,
+            operator,
+            Population.offspringSelectionByFitness,
+            Population.survivorSelectionByAging,
+            eliteNotAging= False,
+            verbose= False
+        )
+
+        if population.best_solution > best_solution:
+            best_solution = population.best_solution
+            no_improvement_counter = 0
+        else:
+            no_improvement_counter += 1
+
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+    pass
+
+def mixed_advancing(population: Population, fractionMutating, max_no_improvement, verbose: bool = False):
+    best_solution = population.best_solution
+
+    mut_weights = [0.1, 0.3, 0.7]
+    rec_weights = [0.1, 0.3, 0.7]
+
+    no_improvement_counter = 0
+    while no_improvement_counter < max_no_improvement:
+
+        population.mixedAdvance(
+            Population.parentTournamentSelection,
+            mut_weights,
+            rec_weights,
+            Population.offspringSelectionByFitness,
+            Population.survivorSelectionByAging,
+            fractionMutating= 0.5,
+            eliteNotAging = False,
+            verbose= verbose
+        )
+
+        if population.best_solution > best_solution:
+            no_improvement_counter = 0
+            best_solution = population.best_solution
+        else:
+            no_improvement_counter += 1
+
+    print(f"---\tEND\t---\nBest solution: \n{best_solution.stringify()} | generation {population.generation}")
+    pass
